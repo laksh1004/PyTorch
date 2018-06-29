@@ -22,6 +22,15 @@ num_epochs = int(num_epochs)
 train_loader = torch.utils.data.DataLoader(train_ds, batch_size, shuffle = True)
 test_loader = torch.utils.data.DataLoader(test_ds, batch_size, shuffle = False)
 
+# O = ((W - K + 2P) / S ) + 1
+# O = OUTPUT HEIGHT/LENGTH
+# W = INPUT HEIGHT/LENGTH
+# K = FILTER SIZE(KERNEL SIZE) = 5
+# P = SAME PADDING(NON-ZERO)
+#   P = (K - 1) / 2 = 2
+# S = STRIDE = 1
+
+
 class CNN(nn.Module):
     def __init__(self):
         super(CNN, self).__init__()
@@ -54,8 +63,41 @@ criterion = nn.CrossEntropyLoss()
 learning_rate = 0.01
 optimizer = torch.optim.SGD(model.parameters(), learning_rate)
 
+iter = 0
+for epoch in range(num_epochs):
+    for i, (images, labels) in enumerate(train_loader):
+        images = Variable(images.cuda())
+        labels = Variable(labels.cuda())
+        
+        optimizer.zero_grad()
+        
+        outputs = model(images)
+        
+        loss = criterion(outputs, labels)
+        
+        loss.backward()
+        
+        optimizer.step()
+        
+        iter += 1
+        
+        if iter % 500 == 0:
+            correct = 0
+            total = 0
+            for images, labels in test_loader:
+                images = Variable(images.cuda())
+                
+                outputs = model(images)
+                
+                _, predicted = torch.max(outputs.data, 1)
+                
+                total += labels.size(0)
+                
+                correct += (predicted.cpu() == labels.cpu()).sum()
+            
+            accuracy = 100 * correct / total
 
-
+            print('Iteration: {}. Loss: {}. Accuracy: {}'.format(iter, loss.data[0], accuracy))
 
 
 
